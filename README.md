@@ -6,8 +6,27 @@
 
 ## Introduction
 
-This is a stripped back fork of Alcantors LotusECU-T4e tool. The monitoring and tuner applicaiton is now standalone.
+This is a stripped back fork of Alcantors LotusECU-T4e tool. The monitoring and live tuner applicaiton is now standalone.
 This program is compatible with Lotus Exige V6 cars running the P138 firmware, with an unlocked calibration.
+
+For firmware flashing use [LotusECU-T4e](https://github.com/Alcantor/LotusECU-T4e)
+
+## Installation (usb2can)
+
+1.  **Python:** Ensure you have Python 3 installed. The recommended install is [3.9.7](https://www.python.org/downloads/release/python-397/) for environment compatibility with [Lotus Flasher](https://github.com/Alcantor/LotusECU-T4e)
+2.  **Dependencies:** Install the required Python libraries. The primary dependencies are `python-can`, and `pyserial`. Open an elevated command prompt and run the following.
+    ```bash
+    pip install python-can
+    pip install pyserial
+    # Add any other specific dependencies if identified, e.g., for a specific CAN interface backend
+    # pip install can-isotp # (Potentially needed depending on python-can version and usage)
+    ```
+3.  **CAN Interface Driver 1:** Install the necessary drivers for the [Korlan](https://shop.8devices.com/index.php?route=product/product&path=67&product_id=89) Adapter, including the [Windows Driver](https://drive.google.com/drive/folders/1gXWpuP20U2mhcW6IqtwhRo0PY9ZusSYv)
+4. **CAN Interface Driver 2:** Install the [USB2CAN](https://drive.google.com/file/d/1_xSpR1bGE3OQN6w0EG9WmrvtgatyQa05/view) driver by placing `usb2can.dll` in your Python install directory.
+
+## Usage
+
+Launch Tuner.py
 
 ## Changes
 
