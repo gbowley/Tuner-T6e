@@ -1,0 +1,75 @@
+hook_init_loc = 0x00042a94;
+hook_init_continue = 0x00042a98;
+hook_loop_continue = 0x00042dd0;
+hook_loop_loc = 0x0004306c;
+hook_timer_5ms_loc = 0x000435b4;
+hook_timer_5ms_continue = 0x000435b8;
+hook_OBD_mode_0x01_loc = 0x000ae778;
+hook_OBD_mode_0x01_continue = 0x000ae77c;
+hook_OBD_mode_0x01_jump = 0x000afab4;
+obd_req = 0x40008388;
+obd_resp = 0x40008408;
+
+// EFI-T6e Symbol File
+// Version 1.0
+
+// Calibration Base
+cal_base = 0x40008e24;
+
+// Live Data Parameters
+engine_speed = 0x400015bc;
+engine_load = 0x400019bc;
+coolant = 0x4000167e;
+air = 0x40001682;
+MAF = 0x4000168c;
+PPS = 0x40001ea6;
+TPS = 0x4000216a;
+pulsewidth_b1 = 0x40001334;
+pulsewidth_b2 = 0x40001336;
+stft_b1 = 0x40001694;
+stft_b2 = 0x40001696;
+ltft_b1 = 0x40001ae0;
+ltft_b2 = 0x40001ae2;
+afr_target = 0x40001792;
+afr_b1 = 0x400026ec;
+afr_b2 = 0x400026ee;
+ign_1 = 0x40002cdc;
+ign_2 = 0x40002cde;
+ign_3 = 0x40002ce0;
+ign_4 = 0x40002ce2;
+ign_5 = 0x40002ce4;
+ign_6 = 0x40002ce6;
+kr_1 = 0x40001bb8;
+kr_2 = 0x40001bb9;
+kr_3 = 0x40001bba;
+kr_4 = 0x40001bbb;
+kr_5 = 0x40001bbc;
+kr_6 = 0x40001bbd;
+fueladaptB1A = 0x400043b7;
+fueladaptB1B = 0x400043d7;
+fueladaptB2A = 0x400043c7;
+fueladaptB2B = 0x400043e7;
+stft_integratorB1 = 0x40001696;
+stft_integratorB2 = 0x40001698;
+vbat = 0x400014fd;
+tipin = 0x400017c8; # possibly wrong or misscaled
+MAFmultiplier = 0x40008e4c; # not yet implemented in tuner
+MAFoffset = 0x40008e4e; # not yet implemented in tuner
+gear = 0x4000186e;
+
+
+// Calibration Map Axes
+cal_Fuel_VolumetricEfficiencyBase_X_RPM = 0x40009dca;
+cal_Fuel_VolumetricEfficiencyBase_Y_Load = 0x40009dea;
+cal_Ignition_TimingBaseMainManual_Y_Load = 0x4000ab96;
+cal_Ignition_TimingBaseMainManual_X_RPM = 0x4000ab82;
+cal_Ignition_TimingBaseSafetyManual_Y_Load = 0x4000a9de;
+cal_Ignition_TimingBaseSafetyManual_X_RPM = 0x4000a9ca;
+cal_Load_AirmassTargetInitial_X_RPM = 0x4000b5c2;
+cal_Load_AirmassTargetInitial_Y_Load = 0x4000b5d2;
+
+// Calibration Map Data
+cal_Fuel_VolumetricEfficiencyBase = 0x40009e0a;
+cal_Ignition_TimingBaseMainManual = 0x4000abaa;
+cal_Ignition_TimingBaseSafetyManual = 0x4000a9f2;
+cal_Load_AirmassTargetInitial = 0x4000b5e2;
