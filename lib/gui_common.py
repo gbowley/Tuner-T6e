@@ -34,7 +34,7 @@ class SelectCAN_widget(tk.LabelFrame):
 		self.entry_channel.pack(side=tk.LEFT, fill=tk.X, expand=True)
 
 		if(with_speed):
-			self.combo_bitrate = ttk.Combobox(self, width=14, state="readonly", values=["white (1 Mb/s)", "black (500 kb/s)"])
+			self.combo_bitrate = ttk.Combobox(self, width=14, state="readonly", values=["Black (500 kb/s)", "white (1 Mb/s)"])
 			self.combo_bitrate.current(0)
 			self.combo_bitrate.pack(side=tk.LEFT)
 
@@ -49,7 +49,7 @@ class SelectCAN_widget(tk.LabelFrame):
 		return channel
 
 	def get_bitrate(self):
-		return [1000000, 500000][self.combo_bitrate.current()]
+		return [500000, 1000000][self.combo_bitrate.current()]
 
 class SelectCOM_widget(tk.LabelFrame):
 	def __init__(self, prefs, parent=None):

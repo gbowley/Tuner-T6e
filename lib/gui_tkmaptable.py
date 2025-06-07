@@ -67,13 +67,6 @@ class MapTable(tk.Canvas):
 		for y in range(0,self.ysize):
 			for x in range(0,self.xsize):
 				self.itemconfigure(self.cells[y][x][0], fill=hls_to_hex(0.7-((self.data[y][x]-min)/q), 0.8, 0.5))
-		# Interpolation coloration
-		#cx, cy, x2r, y2r, m, res = self.interpolation
-		#for y in range(0,2):
-		#	for x in range(0,2):
-		#		# Avoid index out of bound, by checking m !
-		#		if(m[y][x] != 0.0):
-		#			self.itemconfigure(self.cells[cy+y][cx+x][0], fill=hls_to_hex(0.7-((self.data[y][x]-min)/q), 0.8-m[y][x]/2, 0.5))
 
 	def draw_cursor(self):
 		for i in self.cursor: self.delete(i)
@@ -245,53 +238,139 @@ class MapTableEditor(tk.Frame):
 		self.table.reload()
 		self.table.color_cells()
 
-class SimpleGauge(tk.Canvas):
-	def __init__(self, parent, name, read_data, fmt="{:d}", low=0, high=100):
-		tk.Canvas.__init__(self, parent, width=180, height=30)
-		self.create_rectangle(1, 1, 180, 30, fill="white", outline="black", width=1)
-		self.colorbar = self.create_rectangle(3, 20, 179, 29, fill="red", width=0)
-		self.create_text(3, 3, anchor=tk.NW, justify=tk.LEFT, text=name, font=('Helvetica 8'))
-		self.value = self.create_text(178, 30, anchor=tk.SE, justify=tk.RIGHT, text="---", font=('Helvetica 16'))
-		self.read_data = read_data
-		self.fmt = fmt
-		self.low = low
-		self.high = high
-	def update(self):
-		v = self.read_data()
-		self.itemconfigure(self.value, text=self.fmt.format(v))
-		ratio = min((v-self.low)/(self.high-self.low), 1.0)
-		self.coords(self.colorbar, 3, 20, 179*ratio, 29)
-		self.itemconfigure(self.colorbar, fill=hls_to_hex(0.7-(0.7*ratio), 0.5, 1.0))
+class SimpleGauge(tk.LabelFrame):
+    def __init__(self, parent, name, fmt, low, high, read_data):
+        tk.LabelFrame.__init__(self, parent, text=name, bd=2, relief=tk.RIDGE)
+        self.read_data = read_data
+        self.fmt = fmt
+        self.low = low
+        self.high = high
+        self.current_value = None
 
+        self.gauge_var = tk.StringVar()
+        self.gauge_label = tk.Label(self, textvariable=self.gauge_var, font=('Helvetica', 9, 'bold'))
+        self.gauge_label.pack(side=tk.TOP, fill=tk.X, expand=True)
+
+        PROGRESSBAR_HEIGHT = 14
+
+        self.progressbar_container = tk.Frame(self, height=PROGRESSBAR_HEIGHT, bd=0, highlightthickness=0)
+        self.progressbar_container.pack(side=tk.BOTTOM, fill=tk.X, expand=True, pady=(0, 2))
+        self.progressbar_container.pack_propagate(False)
+        self.value_bar = ttk.Progressbar(
+            self.progressbar_container, 
+            orient=tk.HORIZONTAL,
+            mode='determinate'
+        )
+        self.value_bar.pack(fill=tk.BOTH, expand=True)
+
+        self.value_bar['maximum'] = self.high - self.low
+        self.value_bar['value'] = 0
+
+    def get_value(self):
+        return self.current_value
+
+    def update(self):
+        try:
+            value = self.read_data()
+            self.current_value = value
+            self.gauge_var.set(self.fmt.format(value))
+
+            if hasattr(self, 'value_bar'):
+                clamped_value = max(self.low, min(self.high, self.current_value))
+                normalized_value = clamped_value - self.low
+                self.value_bar['value'] = normalized_value
+
+        except Exception as e:
+            self.gauge_var.set("Error")
+            self.current_value = None
+            if hasattr(self, 'value_bar'):
+                self.value_bar['value'] = 0
+
+_current_rpm_value = 0
+_current_load_value = 0.0 # Use float for load to match formatting
+
+def get_demo_rpm():
+    global _current_rpm_value
+    _current_rpm_value += 200 # Increment RPM
+    if _current_rpm_value > 8000: # If exceeds max, reset to min
+        _current_rpm_value = 0
+    return _current_rpm_value
+
+def get_demo_load():
+    global _current_load_value
+    _current_load_value += 0.8 # Increment load by a float
+    if _current_load_value > 100.0: # If exceeds max, reset to min
+        _current_load_value = 0.0
+    return _current_load_value
+
+# --- test_window Class Modification ---
 class test_window():
-	def __init__(self, master):
-		self.master = master
-		master.title('Map Test')
-		master.resizable(0, 0)
+    def __init__(self, master):
+        self.master = master
+        master.title('Map Test')
+        master.resizable(0, 0)
 
-		data = lambda: [[x for x in range(32)]]
-		m = MapTable(master, "rpm", lambda: [(i+1)*250 for i in range(0, 32)], "load", lambda: [0], "test", data)
-		m.do_interpolation(4100,305)
-		m.draw_cursor()
-		m.color_cells()
-		m.pack()
+        # Create a main frame to organize MapTables and Gauges side-by-side
+        main_frame = tk.Frame(master)
+        main_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
 
-		data = lambda: [[y] for y in range(8)]
-		m = MapTable(master, "rpm", lambda: [0], "load", lambda: [(i+1)*80 for i in range(0, 8)], "test", data)
-		m.do_interpolation(4100,305)
-		m.draw_cursor()
-		m.color_cells()
-		m.pack()
+        # Frame for MapTables
+        map_frame = tk.Frame(main_frame)
+        map_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(0, 10))
 
-		data = lambda: [[x*y for x in range(32)] for y in range(32)]
-		m = MapTable(master, "rpm", lambda: [(i+1)*250 for i in range(0, 32)], "load", lambda: [(i+1)*20 for i in range(0, 32)], "test", data)
-		m.do_interpolation(4100,305)
-		m.draw_cursor()
-		m.color_cells()
-		m.pack()
+        # Existing MapTable instances
+        data = lambda: [[x for x in range(32)]]
+        m1 = MapTable(map_frame, "rpm", lambda: [(i+1)*250 for i in range(0, 32)], "load", lambda: [0], "test1", data)
+        m1.do_interpolation(4100,305)
+        m1.draw_cursor()
+        m1.color_cells()
+        m1.pack(pady=5)
 
+        data = lambda: [[y] for y in range(8)]
+        m2 = MapTable(map_frame, "rpm", lambda: [0], "load", lambda: [(i+1)*80 for i in range(0, 8)], "test2", data)
+        m2.do_interpolation(4100,305)
+        m2.draw_cursor()
+        m2.color_cells()
+        m2.pack(pady=5)
+
+        data = lambda: [[x*y for x in range(32)] for y in range(32)]
+        m3 = MapTable(map_frame, "rpm", lambda: [(i+1)*250 for i in range(0, 32)], "load", lambda: [(i+1)*20 for i in range(0, 32)], "test3", data)
+        m3.do_interpolation(4100,305)
+        m3.draw_cursor()
+        m3.color_cells()
+        m3.pack(pady=5)
+
+        # --- Demo Gauges ---
+        gauge_frame = tk.Frame(main_frame)
+        gauge_frame.pack(side=tk.RIGHT, fill=tk.Y, padx=(10, 0))
+
+        self.demo_gauges = [] # List to hold references to gauge objects
+
+        # Demo Gauge 1: RPM
+        gauge_rpm = SimpleGauge(gauge_frame, "Engine RPM", "{:d}", 0, 8000, get_demo_rpm)
+        gauge_rpm.pack(pady=5, fill=tk.X)
+        self.demo_gauges.append(gauge_rpm)
+
+        # Demo Gauge 2: Load
+        gauge_load = SimpleGauge(gauge_frame, "Engine Load", "{:.1f}", 0.0, 100.0, get_demo_load)
+        gauge_load.pack(pady=5, fill=tk.X)
+        self.demo_gauges.append(gauge_load)
+
+        # Start periodic updates for all demo gauges
+        self.update_all_gauges()
+
+    def update_all_gauges(self):
+        """
+        Periodically updates all demo gauge values.
+        """
+        for gauge in self.demo_gauges:
+            gauge.update()
+        
+        # Schedule the next update after 100 milliseconds
+        self.master.after(100, self.update_all_gauges)
+
+# --- Main Application Loop ---
 if __name__ == "__main__":
-	root = tk.Tk()
-	test_window(root)
-	root.mainloop()
-
+    root = tk.Tk()
+    test_window(root)
+    root.mainloop()
