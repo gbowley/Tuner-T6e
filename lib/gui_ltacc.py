@@ -1,25 +1,22 @@
 import os, re
 import tkinter as tk
-import builtins # Used for builtins.enumerate
+import builtins
 from tkinter import ttk, filedialog, simpledialog
 from lib.ltacc import LiveTuningAccess
 from lib.gui_common import SelectCAN_widget, try_msgbox_decorator, bin_file
 from lib.gui_fileprogress import FileProgress_widget
 from lib.gui_tkmaptable import MapTableEditor, SimpleGauge
 import csv
-import configparser
 
-# Some constants
+# Some constants for calculated values
 BO_BE = 'big'
 LSB_WEIGHT_FOR_RAW_MAF_TO_MG_STROKE = 0.25
 NUMBER_OF_CYLINDERS = 6
-# This combined constant incorporates (60 sec/min * 2 revs/cycle * 1000 mg/g)
-CONVERSION_DIVISOR_FOR_GS = 120000.0 # Use float for division
+CONVERSION_DIVISOR_FOR_GS = 120000.0
 
 CHARSET = 'ISO-8859-15'
 
 class LiveTuningAccess_win(tk.Toplevel):
-    # Modified __init__ to accept tuner_script_dir
     def __init__(self, config, parent=None, tuner_script_dir=None):
         tk.Toplevel.__init__(self, parent)
         self.title('Live-Tuning Access')
@@ -28,7 +25,7 @@ class LiveTuningAccess_win(tk.Toplevel):
         self.protocol("WM_DELETE_WINDOW", self.on_closing)
         self.run_task = False
         self.config = config
-        self.tuner_script_dir = tuner_script_dir # Store the tuner script directory
+        self.tuner_script_dir = tuner_script_dir
 
         self.can_device = SelectCAN_widget(config, self)
         self.can_device.pack(fill=tk.X)
@@ -37,7 +34,6 @@ class LiveTuningAccess_win(tk.Toplevel):
         lta_frame.pack(fill=tk.X)
 
         self.fp = FileProgress_widget(lta_frame)
-        # self.fp.pack(fill=tk.X) # <--- This line remains commented out to hide the widget initially
 
         btn_frame = tk.Frame(lta_frame)
         btn_frame.pack(fill=tk.X)
@@ -54,7 +50,7 @@ class LiveTuningAccess_win(tk.Toplevel):
 
     def lta_decorator(func):
         def wrapper(self):
-            lta = LiveTuningAccess(self.fp) # Pass the FileProgress_widget instance
+            lta = LiveTuningAccess(self.fp)
 
             lta.open_can(
                 self.can_device.get_interface(),
@@ -74,36 +70,36 @@ class LiveTuningAccess_win(tk.Toplevel):
     @try_msgbox_decorator
     @lta_decorator
     def tuner(self, lta):
-        sym = SYMMap("patch/t6eP138.sym")
-        if(lta.read_memory(sym.get_sym_addr("cal_base"), 4) != b"P138"):
+        sym = SYMMap("patch/t6eP138.sym") # Path to live tuner definition
+        if(lta.read_memory(sym.get_sym_addr("cal_base"), 4) != b"P138"): # Checks vehicle FW version before allowing access to tuner
             raise Exception("Unsupported ECU! Contact me!")
         speed = 0
         load = 0
         tunable = ({
-            'xname': "rpm",
+            'xname': "rpm", # Axis name
             'read_xdata': lambda: [
-                int(v)*125//4+500 for v in lta.read_memory(
-                    sym.get_sym_addr("cal_Fuel_VolumetricEfficiencyBase_X_RPM"), 32
+                int(v)*125//4+500 for v in lta.read_memory( # Axis scaling
+                    sym.get_sym_addr("cal_Fuel_VolumetricEfficiencyBase_X_RPM"), 32 # Axis address identifier (named in definition file), number of cells in axis
                 )
             ], 
             'get_xvalue': lambda: speed,
             'yname': "load",
             'read_ydata': lambda: [
                 int(v)*4 for v in lta.read_memory(
-                    sym.get_sym_addr("cal_Fuel_VolumetricEfficiencyBase_Y_Load"), 32
+                    sym.get_sym_addr("cal_Fuel_VolumetricEfficiencyBase_Y_Load"), 32 # For Y axis
                 )
             ],
             'get_yvalue': lambda: load,
             'name': "Efficiency",
             'read_data': lambda: [
                 [int(v)/2 for v in lta.read_memory(
-                    sym.get_sym_addr("cal_Fuel_VolumetricEfficiencyBase")+(i*32), 32
+                    sym.get_sym_addr("cal_Fuel_VolumetricEfficiencyBase")+(i*32), 32 # For display of data
                 )] for i in range(0,32)
             ],
             'datafmt': "{:.1f}",
             'step': 0.5,
             'write_cell': lambda x,y,value:lta.write_memory(
-                sym.get_sym_addr("cal_Fuel_VolumetricEfficiencyBase")+(y*32)+x,
+                sym.get_sym_addr("cal_Fuel_VolumetricEfficiencyBase")+(y*32)+x, # As above for writing back to SRAM. REVERSE EQUATION MUST BE ACCURATE
                 int(value*2).to_bytes(1, BO_BE)
             ),
             'xfmt': "{:.0f}",
@@ -114,7 +110,7 @@ class LiveTuningAccess_win(tk.Toplevel):
                 int(v)*125//4+500 for v in lta.read_memory(
                     sym.get_sym_addr("cal_Load_AirmassTargetInitial_X_RPM"), 16
                 )
-            ], #VE
+            ],
             'get_xvalue': lambda: speed,
             'yname': "throttle",
             'read_ydata': lambda: [
@@ -172,7 +168,7 @@ class LiveTuningAccess_win(tk.Toplevel):
                 int(v)*125//4+500 for v in lta.read_memory(
                     sym.get_sym_addr("cal_Ignition_TimingBaseMainManual_X_RPM"), 20
                 )
-            ], #Ign main
+            ], 
             'get_xvalue': lambda: speed,
             'yname': "load",
             'read_ydata': lambda: [
@@ -221,7 +217,7 @@ class LiveTuningAccess_win(tk.Toplevel):
             'high': 70,
             'read_data': lambda: int.from_bytes(lta.read_memory(sym.get_sym_addr("air"), 1), BO_BE)*5/8-40
         },{
-            'name': "MAF",
+            'name': "MAF", # MAF is calculated live based on RPM
             'fmt': "{:.1f} g/s",
             'low': 0,
             'high': 300,
@@ -383,9 +379,9 @@ class LiveTuningAccess_win(tk.Toplevel):
             lambda: lta.write_memory(sym.get_sym_addr("rt_PerCylinder_AdaptiveTimingTrim"), b'\x00\x00\x00\x00\x00\x00\x00\x00'),
             lambda f: lta.upload_verify(sym.get_sym_addr("cal_base"), f),
             lambda f: lta.download_verify(sym.get_sym_addr("cal_base"), 0x3CB4, f),
-            self.fp, # <--- Pass the FileProgress_widget instance here!
-            self, # Parent is still passed
-            self.tuner_script_dir # Pass the tuner script directory
+            self.fp, 
+            self, 
+            self.tuner_script_dir
         )
         while(tw.is_running):
             # Cache speed and load here - There are used mutiple times!
@@ -403,7 +399,7 @@ class LiveTuningAccess_win(tk.Toplevel):
                 lta.write_memory(sym.get_sym_addr("LEA_ltft_idle_adj"), b'')
             self.update()
 
-class SYMMap: # SYMMap is defined here
+class SYMMap:
     def __init__(self, file):
         self.syms = {}
         r = re.compile("^(.*) = (0x[0-9a-f]*);")
@@ -416,7 +412,6 @@ class SYMMap: # SYMMap is defined here
         return self.syms[symbol]
 
 class TunerWin(tk.Toplevel):
-    # Modified __init__ to accept fp_widget and tuner_script_dir
     def __init__(self, config, tunable, gauges, zeroscaler, impfn, expfn, fp_widget, parent=None, tuner_script_dir=None):
         tk.Toplevel.__init__(self, parent)
         self.title('Tuner')
@@ -426,7 +421,7 @@ class TunerWin(tk.Toplevel):
         self.protocol("WM_DELETE_WINDOW", self.on_closing)
         self.is_running = True
         self.config = config
-        self.fp_widget = fp_widget # <--- Store the passed fp_widget here!
+        self.fp_widget = fp_widget
         f_vertical = tk.Frame(self)
         f_vertical.pack(side=tk.LEFT)
         self.tabControl = ttk.Notebook(f_vertical)
@@ -451,26 +446,23 @@ class TunerWin(tk.Toplevel):
         self.impfn = impfn
         self.expfn = expfn
 
-        # --- NEW LOGGING BUTTON AND VARIABLES ---
+        # LOGGING BUTTON AND VARIABLES
         self.is_logging_active = False
         self.log_file = None
         self.csv_writer = None
-        # Set the logging directory to the tuner script's directory
         self.log_directory = tuner_script_dir
-        # Ensure the logs directory exists if a specific subdirectory is desired, otherwise this ensures the path exists
         os.makedirs(self.log_directory, exist_ok=True)
 
         self.log_button = tk.Button(f_action, text="Log", command=self.toggle_logging)
         self.log_button.pack(side=tk.LEFT)
         self.default_button_color = self.log_button.cget('bg') # Store default button color
-        # --- END NEW LOGGING BUTTON AND VARIABLES ---
 
         # Live Variables
         f_live_container = tk.LabelFrame(self, highlightthickness=2, text="Live-Data")
         f_live_container.pack(side=tk.LEFT, fill=tk.Y, padx=(5,0), anchor='nw')
 
-        self.l = [] # This list will hold the SimpleGauge instances
-        self.gauges_info = gauges # Store the list of gauge properties for CSV header
+        self.l = [] 
+        self.gauges_info = gauges
 
         num_gauges = len(gauges)
         gauges_in_first_column = (num_gauges + 1) // 2
@@ -489,9 +481,8 @@ class TunerWin(tk.Toplevel):
 
             gauge_widget = SimpleGauge(parent_frame_for_gauge, **g_props)
             gauge_widget.pack(fill=tk.X, expand=False, pady=1)
-            self.l.append(gauge_widget) # Populate self.l with gauge instances
+            self.l.append(gauge_widget)
 
-    # --- NEW LOGGING METHODS ---
     def _get_unique_log_filename(self, base_name="live_data"):
         """Generates a unique filename for the log CSV."""
         i = 1
@@ -505,59 +496,52 @@ class TunerWin(tk.Toplevel):
     def toggle_logging(self):
         """Toggles logging of gauge data to a CSV file."""
         if not self.is_logging_active:
-            # Start logging
             try:
                 log_filename = self._get_unique_log_filename()
-                self.log_file = open(log_filename, 'w', newline='', encoding='utf-8') # newline='' is crucial for csv
+                self.log_file = open(log_filename, 'w', newline='', encoding='utf-8')
                 self.csv_writer = csv.writer(self.log_file)
 
-                # Write header row (gauge names)
+                # Write header row
                 header = [g['name'] for g in self.gauges_info]
                 self.csv_writer.writerow(header)
 
                 self.is_logging_active = True
                 self.log_button.config(bg='green', text="Stop Log")
-                self.title(f"Tuner - Logging to {os.path.basename(log_filename)}") # Update window title
-                self.fp_widget.log(f"Started logging to {log_filename}") # Log the full path
+                self.title(f"Tuner - Logging to {os.path.basename(log_filename)}") 
+                self.fp_widget.log(f"Started logging to {log_filename}")
             except Exception as e:
-                # Handle error if file cannot be opened
                 self.log_button.config(bg=self.default_button_color, text="Log")
                 self.is_logging_active = False
                 self.fp_widget.log(f"Error starting log: {e}")
-                raise # Re-raise for try_msgbox_decorator to show an error box
+                raise 
         else:
-            # Stop logging
             if self.log_file:
                 self.log_file.close()
                 self.log_file = None
                 self.csv_writer = None
             self.is_logging_active = False
             self.log_button.config(bg=self.default_button_color, text="Log")
-            self.title("Tuner") # Reset window title
+            self.title("Tuner") 
             self.fp_widget.log("Stopped logging.")
-    # --- END NEW LOGGING METHODS ---
 
     def update(self):
         for m in self.m: m.update()
-        for l in self.l: l.update() # Update gauge widgets to refresh their values
+        for l in self.l: l.update()
 
-        # --- LOG DATA IF ACTIVE ---
         if self.is_logging_active and self.csv_writer:
             row_data = []
-            for gauge_widget in self.l: # Iterate through the SimpleGauge instances
+            for gauge_widget in self.l: 
                 try:
-                    row_data.append(gauge_widget.get_value()) # Get the last read value from the gauge
+                    row_data.append(gauge_widget.get_value()) 
                 except Exception as e:
-                    # Log error but don't stop logging unless critical
                     print(f"Error reading gauge data for logging: {gauge_widget.cget('text')}: {e}")
-                    row_data.append(None) # Append None or a placeholder for errored values
+                    row_data.append(None)
 
             try:
                 self.csv_writer.writerow(row_data)
             except Exception as e:
                 self.fp_widget.log(f"Error writing to log file: {e}. Stopping logging.")
-                self.toggle_logging() # Stop logging if write fails
-        # --- END LOG DATA ---
+                self.toggle_logging()
 
     @try_msgbox_decorator
     def impcal(self):

@@ -37,10 +37,8 @@ def run_live_tuning_access_standalone():
             message=f"An error occurred while reading '{PREFS_FILE}': {e}"
         )
 
-    # Get the directory of the Tuner.py script
     tuner_script_dir = os.path.dirname(os.path.abspath(__file__))
 
-    # Pass the script directory to LiveTuningAccess_win
     LiveTuningAccess_win(prefs, root, tuner_script_dir)
 
     root.mainloop()

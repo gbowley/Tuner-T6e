@@ -1,10 +1,7 @@
-import can # sys and argparse are no longer needed for this library file
-from lib.gui_fileprogress import FileProgress_widget # Correctly import FileProgress_widget
+import can 
+from lib.gui_fileprogress import FileProgress_widget
 
 # Some constants
-# BO_LE is kept for potential future use or if other parts of the project
-# (not provided in this context) still rely on it.
-BO_LE = 'little'
 BO_BE = 'big'
 
 class ECUException(Exception):
@@ -24,7 +21,6 @@ class LiveTuningAccess:
 
     def __init__(self, fp):
         self.bus = None
-        # fp is now expected to be an instance of FileProgress_widget
         self.fp = fp
 
     def open_can(self, interface, channel, bitrate):

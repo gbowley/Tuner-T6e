@@ -289,6 +289,8 @@ class SimpleGauge(tk.LabelFrame):
 _current_rpm_value = 0
 _current_load_value = 0.0 # Use float for load to match formatting
 
+# Below is demo interface that can be launched by running this script. Useful for testing changes to formatting without needing to plug into car.
+
 def get_demo_rpm():
     global _current_rpm_value
     _current_rpm_value += 200 # Increment RPM
