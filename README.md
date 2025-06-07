@@ -6,8 +6,10 @@
 
 ## Introduction
 
-This is a stripped back fork of Alcantors LotusECU-T4e tool. The monitoring and tuner applicaiton is now standalone.
+This is a stripped back fork of Alcantors LotusECU-T4e tool. The monitoring and live tuner applicaiton is now standalone.
 This program is compatible with Lotus Exige V6 cars running the P138 firmware, with an unlocked calibration.
+
+For firmware flashing use [LotusECU-T4e](https://github.com/Alcantor/LotusECU-T4e)
 
 ## Installation (usb2can)
 
