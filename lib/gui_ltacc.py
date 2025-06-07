@@ -121,7 +121,7 @@ class LiveTuningAccess_win(tk.Toplevel):
             'get_yvalue': lambda: load,
             'name': "Airmass",
             'read_data': lambda: [
-                [int(v)/2 for v in lta.read_memory(
+                [int(v)*4 for v in lta.read_memory(
                     sym.get_sym_addr("cal_Load_AirmassTargetInitial")+(i*16), 16
                 )] for i in range(0,16)
             ],
@@ -129,7 +129,7 @@ class LiveTuningAccess_win(tk.Toplevel):
             'step': 0.5,
             'write_cell': lambda x,y,value:lta.write_memory(
                 sym.get_sym_addr("cal_Load_AirmassTargetInitial")+(y*16)+x,
-                int(value*2).to_bytes(1, BO_BE)
+                int(value/4).to_bytes(1, BO_BE)
             ),
             'xfmt': "{:.0f}", 
             'yfmt': "{:.0f}" 
