@@ -268,7 +268,7 @@ class SimpleGauge(tk.LabelFrame):
 
     def get_value(self):
         return self.current_value
-
+	
     def update(self):
         try:
             value = self.read_data()

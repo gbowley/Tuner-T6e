@@ -56,6 +56,8 @@ tipin = 0x400017c8; # possibly wrong or misscaled
 MAFmultiplier = 0x40008e4c; # not yet implemented in tuner
 MAFoffset = 0x40008e4e; # not yet implemented in tuner
 gear = 0x4000186e;
+nbo2_b1 = 0x400026ec;
+nbo2_b2 = 0x400026ee;
 
 
 // Calibration Map Axes
